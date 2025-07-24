@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 import io from 'socket.io-client';
 import EmailForm from './components/EmailForm';
 import EmailLogs from './components/EmailLogs';
@@ -122,11 +122,60 @@ function App() {
     // Listen for campaign completion
     newSocket.on('campaignCompleted', (data) => {
       console.log('🎉 Campaign completed:', data);
+      const completionMessage = `🎉 Campaign "${data.campaignName}" completed! ${data.totalEmailsSent} emails sent across ${data.totalBatches} batches.`;
+      
       setEmailLogs(prev => [...prev, {
         type: 'complete',
-        message: `🎉 Campaign "${data.campaignName}" completed! ${data.totalEmailsSent} emails sent across ${data.totalBatches} batches.`
+        message: completionMessage
       }]);
       setIsSending(false);
+      
+      // Show success toast notification
+      toast.success(completionMessage, {
+        duration: 6000,
+        position: 'top-center',
+        style: {
+          background: '#10B981',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          padding: '16px 24px',
+          borderRadius: '10px',
+          maxWidth: '500px'
+        },
+        icon: '🎉'
+      });
+    });
+
+    // Listen for campaign-complete events (from socket handler)
+    newSocket.on('campaign-complete', (data) => {
+      console.log('🎉 Campaign completed (new format):', data);
+      const campaignData = data.data || {};
+      const completionMessage = `🎉 Campaign "${campaignData.name || 'Campaign'}" completed! ${campaignData.sentEmails || 0}/${campaignData.totalEmails || 0} emails sent in ${campaignData.duration || 0} days`;
+      
+      setEmailLogs(prev => [...prev, {
+        type: 'complete',
+        message: completionMessage
+      }]);
+      setIsSending(false);
+      // Clear progress when campaign completes
+      setProgress(null);
+      
+      // Show success toast notification
+      toast.success(completionMessage, {
+        duration: 6000,
+        position: 'top-center',
+        style: {
+          background: '#10B981',
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          padding: '16px 24px',
+          borderRadius: '10px',
+          maxWidth: '500px'
+        },
+        icon: '🎉'
+      });
     });
 
     // Listen for general email logs (ALL server logs)
