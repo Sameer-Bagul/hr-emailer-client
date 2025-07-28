@@ -38,6 +38,26 @@ const CampaignDashboard = () => {
     }
   };
 
+  const continueCampaignProcessing = async (campaignId) => {
+    try {
+      toast.loading('Continuing campaign processing...', { id: 'continue-campaign' });
+      
+      await api.post(`/api/campaigns/${campaignId}/continue`, {
+        maxBatches: 10 // Process up to 10 more batches
+      });
+      
+      toast.success('Campaign processing continued successfully!', { id: 'continue-campaign' });
+      
+      // Refresh campaign details and list
+      await loadCampaignDetails(campaignId);
+      await loadCampaigns();
+      
+    } catch (error) {
+      console.error('Error continuing campaign processing:', error);
+      toast.error('Failed to continue campaign processing', { id: 'continue-campaign' });
+    }
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'active':
@@ -240,6 +260,20 @@ const CampaignDashboard = () => {
                   <span className="progress-text">{selectedCampaign.progress}%</span>
                 </div>
               </div>
+
+              {selectedCampaign.status === 'active' && selectedCampaign.progress < 100 && (
+                <div className="campaign-actions">
+                  <button
+                    className="continue-button"
+                    onClick={() => continueCampaignProcessing(selectedCampaign.id)}
+                  >
+                    📧 Continue Processing (Send More Emails)
+                  </button>
+                  <p className="action-help">
+                    Click to process up to 10 more batches (up to 500 more emails) immediately
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
